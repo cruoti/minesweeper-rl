@@ -1,7 +1,7 @@
 # TODO
 # - [x] Flags
-# - [ ] Win Game
-# - [ ] Lose Game
+# - [x] Win Game
+# - [x] Lose Game
 # - [ ] restart
 # - [ ] Easy / Med / Hard
 # - [ ] Scoring
@@ -10,6 +10,17 @@
 # - ...
 # - [ ] Flag counter
 # - [ ] Indent when mouse button down
+
+
+# Conditions for Winning
+# - all unknown cells are mines + all flags are mines (no incorrect flags)
+# - all unknown cells are mines + flags are mines
+
+
+
+
+# Conditions for Losing
+# - click on a mine
 
 
 import random
@@ -39,7 +50,7 @@ sprite_mine_false = pygame.image.load('sprites/mineFalse.png')
 # creating the field
 rows = 10
 cols = 10
-mine_count = 20
+mine_count = 10
 
 cell_count = rows * cols
 mine_locs = random.sample(range(cell_count), mine_count)
@@ -189,8 +200,25 @@ while running:
                     screen_cell = screen_field[i][j]
                     if screen_cell.rect.collidepoint(event.pos):
                         if event.button == 1:  # LEFT Click
-                            print(screen_cell.value)
                             click_cell(i, j)
+                            
+                            # check if lose - clicked on a mine that isn't flagged
+                            if screen_cell.is_known and screen_cell.value == -1:
+                                print('You lose')
+                                running = False
+
+                            # check if won
+                            # all unknown are mines and all flags are correctly identified as mines
+                            won = True
+                            for ii in range(rows):
+                                for jj in range(rows):
+                                    if (not screen_field[ii][jj].is_known) or screen_field[ii][jj].is_flagged:
+                                        if screen_field[ii][jj].value != -1:
+                                            won = False
+                                            break                                    
+                            if won:
+                                print('You Win!')
+
                         elif event.button == 3:  # RIGHT Click
                             screen_cell.click_flag()
 
