@@ -93,7 +93,8 @@ cell_width = screen_width // rows
 cell_height = screen_height // cols
 
 class ScreenCell:
-    def __init__(self, value, row, col):
+    def __init__(self, screen, value, row, col):
+        self.screen = screen
         self.value = value
         self.rect = pygame.Rect(col*cell_width, row*cell_height, cell_width, cell_height)
         self._sprite = self.get_sprite(value)
@@ -110,18 +111,18 @@ class ScreenCell:
             sprite = sprite_unkwn
         return pygame.transform.scale(sprite, (cell_width, cell_height))
 
-    def click(self, screen):
+    def click(self):
         if not self.is_flagged:
             self.is_known = True
-            self.blit(screen)
+            self.blit()
 
-    def click_flag(self, screen):
+    def click_flag(self):
         if not self.is_known:
             self.is_flagged = not self.is_flagged
-            self.blit(screen)
+            self.blit()
 
-    def blit(self, screen):
-        screen.blit(self.sprite, self.rect)
+    def blit(self):
+        self.screen.blit(self.sprite, self.rect)
 
     @staticmethod
     def get_sprite(value):
@@ -147,14 +148,14 @@ screen_field = [[None] * cols for _ in range(rows)]
 for i in range(rows):
     for j in range(cols):
         val = field[i][j]
-        screen_cell = ScreenCell(val, i, j)
+        screen_cell = ScreenCell(screen, val, i, j)
         screen_field[i][j] = screen_cell
-        screen_cell.blit(screen)
+        screen_cell.blit()
 
 
 def click_cell(row, col):
     cell = screen_field[row][col]
-    cell.click(screen)
+    cell.click()
 
     if cell.value == 0:
         row_checks = [0]
@@ -191,7 +192,7 @@ while running:
                             print(screen_cell.value)
                             click_cell(i, j)
                         elif event.button == 3:  # RIGHT Click
-                            screen_cell.click_flag(screen)
+                            screen_cell.click_flag()
 
     pygame.display.flip()
 
