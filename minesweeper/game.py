@@ -1,3 +1,17 @@
+# TODO
+# - [x] Flags
+# - [ ] Win Game
+# - [ ] Lose Game
+# - [ ] restart
+# - [ ] Easy / Med / Hard
+# - [ ] Scoring
+# - [ ] API
+# - [ ] RL Model 
+# - ...
+# - [ ] Flag counter
+# - [ ] Indent when mouse button down
+
+
 import random
 import pygame
 
@@ -25,7 +39,7 @@ sprite_mine_false = pygame.image.load('sprites/mineFalse.png')
 # creating the field
 rows = 10
 cols = 10
-mine_count = 1
+mine_count = 20
 
 cell_count = rows * cols
 mine_locs = random.sample(range(cell_count), mine_count)
@@ -84,18 +98,27 @@ class ScreenCell:
         self.rect = pygame.Rect(col*cell_width, row*cell_height, cell_width, cell_height)
         self._sprite = self.get_sprite(value)
         self.is_known = False
+        self.is_flagged = False
 
     @property
     def sprite(self):
         if self.is_known:
             sprite = self._sprite
+        elif self.is_flagged:
+            sprite = sprite_flag
         else:
             sprite = sprite_unkwn
         return pygame.transform.scale(sprite, (cell_width, cell_height))
 
     def click(self, screen):
-        self.is_known = True
-        self.blit(screen)
+        if not self.is_flagged:
+            self.is_known = True
+            self.blit(screen)
+
+    def click_flag(self, screen):
+        if not self.is_known:
+            self.is_flagged = not self.is_flagged
+            self.blit(screen)
 
     def blit(self, screen):
         screen.blit(self.sprite, self.rect)
@@ -103,26 +126,16 @@ class ScreenCell:
     @staticmethod
     def get_sprite(value):
         match value:
-            case -1:
-                return sprite_mine
-            case 0:
-                return sprite_0
-            case 1:
-                return sprite_1
-            case 2:
-                return sprite_2
-            case 3:
-                return sprite_3
-            case 4:
-                return sprite_4
-            case 5:
-                return sprite_5
-            case 6:
-                return sprite_6
-            case 7:
-                return sprite_7
-            case 8:
-                return sprite_8
+            case -1: return sprite_mine
+            case 0: return sprite_0
+            case 1: return sprite_1
+            case 2: return sprite_2
+            case 3: return sprite_3
+            case 4: return sprite_4
+            case 5: return sprite_5
+            case 6: return sprite_6
+            case 7: return sprite_7
+            case 8: return sprite_8
 
 
 # initilaize game board
@@ -174,28 +187,11 @@ while running:
                 for j in range(cols):
                     screen_cell = screen_field[i][j]
                     if screen_cell.rect.collidepoint(event.pos):
-                        print(screen_cell.value)
-                        click_cell(i, j)
-
-                        # screen_cell.click(screen)
-                        
-                        # if screen_cell.value == 0:
-                        #     row_checks = [0]
-                        #     if i != 0:
-                        #         row_checks.append(-1)
-                        #     if i != rows-1:
-                        #         row_checks.append(1)
-                            
-                        #     col_checks = [0]
-                        #     if j != 0:
-                        #         col_checks.append(-1)
-                        #     if j != cols-1:
-                        #         col_checks.append(1)
-                           
-                        #     for ii in row_checks:
-                        #         for jj in col_checks:
-                        #             if not (ii == jj and ii == 0):
-                        #                 screen_field[i+ii][j+jj].click(screen)
+                        if event.button == 1:  # LEFT Click
+                            print(screen_cell.value)
+                            click_cell(i, j)
+                        elif event.button == 3:  # RIGHT Click
+                            screen_cell.click_flag(screen)
 
     pygame.display.flip()
 
