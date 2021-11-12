@@ -163,6 +163,13 @@ for i in range(rows):
         screen_field[i][j] = screen_cell
         screen_cell.blit()
 
+def popup_text(txt, s):
+    screen_text = pygame.font.SysFont("Calibri", s, True).render(txt, True, (0, 0, 0), (255, 255, 255))
+    screen_text.set_alpha(200)
+    rect = screen_text.get_rect()
+    rect.center = (screen_width / 2, screen_height / 2)
+    screen.blit(screen_text, rect)
+    
 
 def click_cell(row, col):
     cell = screen_field[row][col]
@@ -189,11 +196,14 @@ def click_cell(row, col):
 
 # initialize the event loop
 running = True
+is_game_over = False
 while running:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if is_game_over is True:
+            pass
         elif event.type == pygame.MOUSEBUTTONUP:
             for i in range(rows):
                 for j in range(cols):
@@ -204,8 +214,9 @@ while running:
                             
                             # check if lose - clicked on a mine that isn't flagged
                             if screen_cell.is_known and screen_cell.value == -1:
-                                print('You lose')
-                                running = False
+                                popup_text('You Lose!', 50)
+                                is_game_over = True
+                                # running = False
 
                             # check if won
                             # all unknown are mines and all flags are correctly identified as mines
@@ -217,7 +228,8 @@ while running:
                                             won = False
                                             break                                    
                             if won:
-                                print('You Win!')
+                                popup_text('You Win!', 50)
+                                is_game_over = True
 
                         elif event.button == 3:  # RIGHT Click
                             screen_cell.click_flag()
