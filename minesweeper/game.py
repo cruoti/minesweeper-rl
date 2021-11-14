@@ -47,12 +47,35 @@ sprite_mine_clicked = pygame.image.load('sprites/mineClicked.png')
 sprite_mine_false = pygame.image.load('sprites/mineFalse.png')
 
 
-# creating the field
-rows = 10
-cols = 10
-mine_count = 10
+class Game:
+    def __init__(self, rows, cols, mine_count):
+        self.rows = rows
+        self.cols = cols
+        self.mine_count = mine_count
 
-cell_count = rows * cols
+    @property
+    def cell_count(self):
+        return self.rows * self.cols
+
+
+class EasyGame(Game):
+    def __init__(self):
+        super().__init__(rows=8, cols=10, mine_count=10)
+
+
+class MedGame(Game):
+    def __init__(self):
+        super().__init__(rows=15, cols=18, mine_count=40)
+
+
+class HardGame(Game):
+    def __init__(self):
+        super().__init__(rows=20, cols=24, mine_count=99)
+
+
+
+# creating the field
+game = HardGame()
 
 
 class MineField:
@@ -66,12 +89,13 @@ class Cell:
 
 
 # initialize screen
-screen_width = 500
 screen_height = 500
+screen_width = screen_height * 1.2
 screen = pygame.display.set_mode([screen_width, screen_height])
 
-cell_width = screen_width // rows
-cell_height = screen_height // cols
+cell_width = screen_width // game.cols
+cell_height = screen_height // game.rows
+
 
 class ScreenCell:
     def __init__(self, screen, value, row, col):
@@ -89,7 +113,7 @@ class ScreenCell:
         elif self.is_flagged:
             sprite = sprite_flag
         else:
-            sprite = sprite_unkwn
+            sprite = self._sprite#sprite_unkwn
         return pygame.transform.scale(sprite, (cell_width, cell_height))
 
     def click(self):
@@ -153,13 +177,13 @@ def click_cell(field, row, col):
         row_checks = [0]
         if row != 0:
             row_checks.append(-1)
-        if row != rows-1:
+        if row != game.rows-1:
             row_checks.append(1)
         
         col_checks = [0]
         if col != 0:
             col_checks.append(-1)
-        if col != cols-1:
+        if col != game.cols-1:
             col_checks.append(1)
         
         for i in row_checks:
@@ -174,29 +198,28 @@ class Quit(Exception): pass
 
 
 def play_game():
-    mine_locs = random.sample(range(cell_count), mine_count)
-
-    field = [[0] * cols for _ in range(rows)]
+    mine_locs = sorted(random.sample(range(game.cell_count), game.mine_count))
+    field = [[0] * game.cols for _ in range(game.rows)]
 
     for loc in mine_locs:
-        row = loc // rows
-        col = loc % rows
+        row = loc // game.cols
+        col = loc % game.cols
         field[row][col] = -1
 
     for loc in mine_locs:
-        row = loc // rows
-        col = loc % rows
+        row = loc // game.cols
+        col = loc % game.cols
         
         row_checks = [0]
         if row != 0:
             row_checks.append(-1)
-        if row != rows-1:
+        if row != game.rows-1:
             row_checks.append(1)
         
         col_checks = [0]
         if col != 0:
             col_checks.append(-1)
-        if col != cols-1:
+        if col != game.cols-1:
             col_checks.append(1)
 
         for i in row_checks:
@@ -208,11 +231,11 @@ def play_game():
     # initilaize game board
     screen.fill((255, 255, 255))
 
-    screen_field = [[None] * cols for _ in range(rows)]
+    screen_field = [[None] * game.cols for _ in range(game.rows)]
 
     # display cells
-    for i in range(rows):
-        for j in range(cols):
+    for i in range(game.rows):
+        for j in range(game.cols):
             val = field[i][j]
             screen_cell = ScreenCell(screen, val, i, j)
             screen_field[i][j] = screen_cell
@@ -235,8 +258,8 @@ def play_game():
                         raise Quit
             elif event.type == pygame.MOUSEBUTTONUP:
                 try:
-                    for i in range(rows):
-                        for j in range(cols):
+                    for i in range(game.rows):
+                        for j in range(game.cols):
                             screen_cell = screen_field[i][j]
                             if screen_cell.rect.collidepoint(event.pos):
                                 if event.button == 1:  # LEFT Click
@@ -254,8 +277,8 @@ def play_game():
                                     # check if won
                                     # all unknown are mines and all flags are correctly identified as mines
                                     won = True
-                                    for ii in range(rows):
-                                        for jj in range(rows):
+                                    for ii in range(game.rows):
+                                        for jj in range(game.rows):
                                             if (not screen_field[ii][jj].is_known) or screen_field[ii][jj].is_flagged:
                                                 if screen_field[ii][jj].value != -1:
                                                     won = False
@@ -268,8 +291,8 @@ def play_game():
 
                 except GameOver:
                     is_game_over = True
-                    for i in range(rows):
-                        for j in range(cols):
+                    for i in range(game.rows):
+                        for j in range(game.cols):
                             screen_field[i][j].reveal()
                     
                     if won:
