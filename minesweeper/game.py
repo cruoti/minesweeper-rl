@@ -113,7 +113,7 @@ class ScreenCell:
         elif self.is_flagged:
             sprite = sprite_flag
         else:
-            sprite = self._sprite#sprite_unkwn
+            sprite = sprite_unkwn
         return pygame.transform.scale(sprite, (cell_width, cell_height))
 
     def click(self):
@@ -271,7 +271,6 @@ def play_game():
                                         screen.blit(
                                             pygame.transform.scale(sprite_mine_clicked, (cell_width, cell_height)), 
                                             screen_cell.rect)
-
                                         raise GameOver
 
                                     # check if won
@@ -302,7 +301,7 @@ def play_game():
                     popup_text("Click 'r' to play again", 50, 25)
 
         pygame.display.flip()
-
+        
 
 if __name__ == '__main__':
     try:
