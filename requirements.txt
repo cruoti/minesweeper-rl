@@ -1,4 +1,8 @@
+# game
 pygame
+
+# reinforcement learning
+gym
 
 # dev
 ipykernel
