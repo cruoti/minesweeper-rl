@@ -2,7 +2,7 @@
 # - [x] Flags
 # - [x] Win Game
 # - [x] Lose Game
-# - [ ] restart
+# - [x] restart
 # - [ ] Easy / Med / Hard
 # - [ ] Scoring
 # - [ ] API
@@ -53,36 +53,6 @@ cols = 10
 mine_count = 10
 
 cell_count = rows * cols
-mine_locs = random.sample(range(cell_count), mine_count)
-
-field = [[0] * cols for _ in range(rows)]
-
-for loc in mine_locs:
-    row = loc // rows
-    col = loc % rows
-    field[row][col] = -1
-
-for loc in mine_locs:
-    row = loc // rows
-    col = loc % rows
-    
-    row_checks = [0]
-    if row != 0:
-        row_checks.append(-1)
-    if row != rows-1:
-        row_checks.append(1)
-    
-    col_checks = [0]
-    if col != 0:
-        col_checks.append(-1)
-    if col != cols-1:
-        col_checks.append(1)
-
-    for i in row_checks:
-        for j in col_checks:
-            val = field[row+i][col+j]
-            if val != -1:
-                field[row+i][col+j] = val + 1        
 
 
 class MineField:
@@ -167,29 +137,16 @@ class ScreenCell:
             case 8: return sprite_8
 
 
-# initilaize game board
-screen.fill((255, 255, 255))
-
-screen_field = [[None] * cols for _ in range(rows)]
-
-# display cells
-for i in range(rows):
-    for j in range(cols):
-        val = field[i][j]
-        screen_cell = ScreenCell(screen, val, i, j)
-        screen_field[i][j] = screen_cell
-        screen_cell.blit()
-
-def popup_text(txt, s):
-    screen_text = pygame.font.SysFont("Calibri", s, True).render(txt, True, (0, 0, 0), (255, 255, 255))
+def popup_text(txt, font_size, yoff=0):
+    screen_text = pygame.font.SysFont("Calibri", font_size, True).render(txt, True, (0, 0, 0), (255, 255, 255))
     screen_text.set_alpha(200)
     rect = screen_text.get_rect()
-    rect.center = (screen_width / 2, screen_height / 2)
+    rect.center = (screen_width / 2, screen_height / 2 + yoff)
     screen.blit(screen_text, rect)
     
 
-def click_cell(row, col):
-    cell = screen_field[row][col]
+def click_cell(field, row, col):
+    cell = field[row][col]
     cell.click()
 
     if cell.value == 0:
@@ -208,66 +165,125 @@ def click_cell(row, col):
         for i in row_checks:
             for j in col_checks:
                 if not (i == 0 and j == 0):
-                    if not screen_field[row+i][col+j].is_known:
-                        click_cell(row+i, col+j)
+                    if not field[row+i][col+j].is_known:
+                        click_cell(field, row+i, col+j)
+
 
 class GameOver(Exception): pass
+class Quit(Exception): pass
 
-# initialize the event loop
-running = True
-is_game_over = False
-while running:
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if is_game_over is True:
-            pass
-        elif event.type == pygame.MOUSEBUTTONUP:
-            try:
-                for i in range(rows):
-                    for j in range(cols):
-                        screen_cell = screen_field[i][j]
-                        if screen_cell.rect.collidepoint(event.pos):
-                            if event.button == 1:  # LEFT Click
-                                click_cell(i, j)
-                                
-                                # check if lose - clicked on a mine that isn't flagged
-                                if screen_cell.is_known and screen_cell.value == -1:
-                                    # popup_text('You Lose!', 50)
-                                    screen.blit(
-                                        pygame.transform.scale(sprite_mine_clicked, (cell_width, cell_height)), 
-                                        screen_cell.rect)
+def play_game():
+    mine_locs = random.sample(range(cell_count), mine_count)
 
-                                    raise GameOver
+    field = [[0] * cols for _ in range(rows)]
 
-                                # check if won
-                                # all unknown are mines and all flags are correctly identified as mines
-                                won = True
-                                for ii in range(rows):
-                                    for jj in range(rows):
-                                        if (not screen_field[ii][jj].is_known) or screen_field[ii][jj].is_flagged:
-                                            if screen_field[ii][jj].value != -1:
-                                                won = False
-                                                break                                    
-                                if won:
-                                    raise GameOver
+    for loc in mine_locs:
+        row = loc // rows
+        col = loc % rows
+        field[row][col] = -1
 
-                            elif event.button == 3:  # RIGHT Click
-                                screen_cell.click_flag()
+    for loc in mine_locs:
+        row = loc // rows
+        col = loc % rows
+        
+        row_checks = [0]
+        if row != 0:
+            row_checks.append(-1)
+        if row != rows-1:
+            row_checks.append(1)
+        
+        col_checks = [0]
+        if col != 0:
+            col_checks.append(-1)
+        if col != cols-1:
+            col_checks.append(1)
 
-            except GameOver:
+        for i in row_checks:
+            for j in col_checks:
+                val = field[row+i][col+j]
+                if val != -1:
+                    field[row+i][col+j] = val + 1        
+
+    # initilaize game board
+    screen.fill((255, 255, 255))
+
+    screen_field = [[None] * cols for _ in range(rows)]
+
+    # display cells
+    for i in range(rows):
+        for j in range(cols):
+            val = field[i][j]
+            screen_cell = ScreenCell(screen, val, i, j)
+            screen_field[i][j] = screen_cell
+            screen_cell.blit()
+
+
+    # initialize the event loop
+    running = True
+    is_game_over = False
+    won = False
+    while running:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                raise Quit
+            if is_game_over:
+                if event.type == pygame.KEYDOWN:
+                    if pygame.key.name(event.key) == 'r':
+                        play_game()
+                        raise Quit
+            elif event.type == pygame.MOUSEBUTTONUP:
+                try:
+                    for i in range(rows):
+                        for j in range(cols):
+                            screen_cell = screen_field[i][j]
+                            if screen_cell.rect.collidepoint(event.pos):
+                                if event.button == 1:  # LEFT Click
+                                    click_cell(screen_field, i, j)
+                                    
+                                    # check if lose - clicked on a mine that isn't flagged
+                                    if screen_cell.is_known and screen_cell.value == -1:
+                                        # popup_text('You Lose!', 50)
+                                        screen.blit(
+                                            pygame.transform.scale(sprite_mine_clicked, (cell_width, cell_height)), 
+                                            screen_cell.rect)
+
+                                        raise GameOver
+
+                                    # check if won
+                                    # all unknown are mines and all flags are correctly identified as mines
+                                    won = True
+                                    for ii in range(rows):
+                                        for jj in range(rows):
+                                            if (not screen_field[ii][jj].is_known) or screen_field[ii][jj].is_flagged:
+                                                if screen_field[ii][jj].value != -1:
+                                                    won = False
+                                                    break                                    
+                                    if won:
+                                        raise GameOver
+
+                                elif event.button == 3:  # RIGHT Click
+                                    screen_cell.click_flag()
+
+                except GameOver:
+                    is_game_over = True
                     for i in range(rows):
                         for j in range(cols):
                             screen_field[i][j].reveal()
                     
                     if won:
-                        popup_text('You Win!', 50)
+                        popup_text('You Win!', 50, -25)
                     else:
-                        popup_text('You Lose!', 50)
+                        popup_text('You Lose!', 50, -25)
+                    popup_text("Click 'r' to play again", 50, 25)
+
+        pygame.display.flip()
 
 
-    pygame.display.flip()
-
-pygame.quit()
+if __name__ == '__main__':
+    try:
+        play_game()
+    except Quit:
+        pygame.quit()
 
